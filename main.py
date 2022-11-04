@@ -1,7 +1,7 @@
 import sqlite3
 con = sqlite3.connect('SnakeDB.db')
 cursor = con.cursor()
-
+currentGameNumber = 0
 
 def onetime():
   creationsql = '''
@@ -19,7 +19,7 @@ def createtable():
 def Datainsert():
   DataValues = '''
   INSERT INTO `Data`  VALUES
-  ('''"value1", "etc."''')
+  ('''+ currentGameNumber + ''', "etc.")
   '''
   cursor.execute(DataValues)
   con.commit()
@@ -40,5 +40,10 @@ def GetGameNumber():
 
   cursor.execute(GameNumberSQL)
   con.commit()
-  rows = cursor.fetchall() 
-  HighNum = rows[0]
+  currentGameNumber = str(int(cursor.fetchall()[0][0])+1)
+def GetLength():
+  pass
+  #https://replit.com/@linternj137/Encrypttest#main.py
+  
+#Start of run time
+GetGameNumber()
