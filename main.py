@@ -1,7 +1,12 @@
 import sqlite3
+import math
 con = sqlite3.connect('SnakeDB.db')
 cursor = con.cursor()
 currentGameNumber = 0
+
+
+#Array to store move numbers when food was collected
+
 MoveNum = 0
 def onetime():
   creationsql = '''
@@ -11,25 +16,26 @@ def onetime():
   cursor.execute(creationsql)
   con.commit()
 def createtable():
-  DataTableSQL = "CREATE TABLE 'Data'('Gamenumber','MoveID','Length','Currentmap','Surrounding8','Distance')"
-  ScoreTableSQL = "CREATE TABLE 'Score'('Gamenumber','MoveID', 'Movesuntildead', 'Movesuntilfood', 'CloserToFood', 'DirectionPicked')"
+  DataTableSQL = "CREATE TABLE 'Data'('Gamenumber','MoveID','Length','Currentmap','Surrounding8','Distance','ReferenceMap')"
+  ScoreTableSQL = "CREATE TABLE 'Score'('Gamenumber','MoveID', 'Movesuntildead', 'Movesuntilfood', 'CloserToFood', 'DirectionPicked', 'Score')"
   cursor.execute(ScoreTableSQL)
   con.commit()
 
-def Datainsert(CurrentMap, RealMap):
+def Datainsert(CurrentMap, RealMap, DirectionToFood):
   #CURRENT MAP SHOULD BE AFTER CONVERTED TO SRING FROM ARRAY
   #REAL MAP SHOULD BE MAP AS ARRAY
+  Surrounding8 = GetSurrounding8(RealMap)
   DataValues = '''
   INSERT INTO `Data`  VALUES
-  ('''+ currentGameNumber + ''', '''+GetMoveID(currentGameNumber)+''', '''+GetLength(CurrentMap)+''', '''+CurrentMap+''','''+GetSurrounding8(RealMap)+''','''+GetDistance(RealMap)+''')
+  ('''+ currentGameNumber + ''', '''+GetMoveID(currentGameNumber)+''', '''+GetLength(CurrentMap)+''', '''+CurrentMap+''','''+Surrounding8+''','''+GetDistance(RealMap)+''','''+ReferenceMap(Surrounding8, DirectionToFood)+''')
   '''
   cursor.execute(DataValues)
   con.commit()
 
-def Scoreinsert():
+def Scoreinsert(MoveID, TotalMoves, Map, LastMap):
   ScoreValues = '''
   INSERT INTO `Score`  VALUES
-  ('''"value1", "etc."''')
+  ('''+currentGameNumber+''','''+MoveID+''','''+str(int(TotalMoves)-int(MoveID))+''', '''+MovesUntilDead(MoveID)+''', '''+CloserToFood(Map, LastMap)+''')
   '''
   cursor.execute(ScoreValues)
   con.commit()
@@ -43,7 +49,7 @@ def GetGameNumber():
 
   cursor.execute(GameNumberSQL)
   con.commit()
-  currentGameNumber = str(int(cursor.fetchall()[0][0])+1)
+  return(str(int(cursor.fetchall()[0][0])+1))
   #CHECK THIS WORKS, MAY HAVE LOCAL VAR REF BEFORE ASSIGNMENT OR NOT UPDATING GLOBAL VAR JUST LOCAL
   
   
@@ -108,14 +114,89 @@ def GetDistance(map):
         break
   return(str(math.sqrt(((xfood-xhead)*(xfood-xhead)+(yfood-yhead)*(yfood-yhead)))))
 
+def MapArrayToString(map):
+  StringMap = ""
+  for i in range(len(map)):
+    for k in range(len(map)):
+      StringMap = StringMap + map[i][k] 
 
 
+def MovesUntilDead(MoveID):
+  return(str(TotalMoves-MoveID))
+def MovesUntilFood(MoveID):
+  for i in range(len(FoodMoves)):
+    if MoveID <= FoodMoves[i]:
+      return(str(int(FoodMoves[i])-int(MoveID)))
+def CloserToFood(map, lastmap):
+  if GetDistance(map) > GetDistance(lastmap):
+    return "True"
+  else:
+    return "False"
+##################################################################
+def PickAMove(Surrounding8, ):
+  pass
+def GetDirectionToFood(map):
+  Found = False
+  xhead = 0
+  yhead = 0
+  for i in range(len(map)):
+    for k in range(len(map[i])):
+      if map[i][k] == "5":
+        Found = True
+        xhead = k
+        yhead = i
+      if Found == True:
+        break
+  Found1 = False
+  xfood = 0
+  yfood = 0
+  for i in range(len(map)):
+    for k in range(len(map[i])):
+      if map[i][k] == "9":
+        Found1 = True
+        xfood = k
+        yfood = i
+      if Found1 == True:
+        break
+  if math.sqrt((xhead-xfood)*(xhead-xfood)) < math.sqrt((yhead-yfood)*(yhead-yfood)):
+    if yhead-yfood > 0:
+      return("w")
+    else:
+      return("s")
+  else:
+    if xhead-xfood > 0:
+      return("a")
+    else:
+      return("d")
   
-def move():
+def GenerateScore(MovesUntilDead, MovesUntilFood, CloserToFood):
+  score = 0
+  score = (int(MovesUntilDead)*int(MovesUntilDead))+MovesUntilFood
+  if bool(CloserToFood) == True:
+    score = score * 2
+  return(score)
+
+#################################################################
+def ReferenceMap(Surrounding8, DirectionToFood):
+  return(str(Surrounding8) + str(DirectionToFood))
+  
+def Move():
   #Datainsert()
   pass
-  
+exit = False
+#temporary
 #Start of run time
+while exit == False:
+  TotalMoves = 0
+  Alive = True
+  FoodMoves = []
+  currentGameNumber = GetGameNumber()
+  while Alive == True:
+    surrounding8 = GetSurrounding8(map)
+    directiontofood = GetDirectionToFood(map)
+    refmap = ReferenceMap(surrounding8, directiontofood)
+    arraymap = MapArrayToString(map)
+    TotalMoves += 1
+    PickAMove(refmap)
 
-
-#TODO: Convert array map to string
+#TODO: DirectionPickedFunction
